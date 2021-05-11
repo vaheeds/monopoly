@@ -376,16 +376,27 @@ void play()
   setMoneyToCard(-1* m);
   setMoneyToCard(m);
 }
-short hexToInt(byte[2] hex)
-{
-  sort t = 0;
-  t = (int)hex;
-  return t;
-}
-byte[] intToHex(short n)
-{
-  byte t[2] = {0x00,0x00};
-  t[0] = (byte)n;
-  t[1] = (byte)(n << 8);
-  return t;
+
+void testIntToCard(short money){
+  byte buffer[16]= {0x4E,0x00,0x00,0x00,
+                  0x00,0x00,0x00,0x00,
+                  0x00,0x00,0x00,0x00,
+                  0x00,0x00,0x00,0x00};
+  Serial.println(money);
+    String s = String(money);
+  while(s.length() < 4){
+    s = " " + s;
+  }
+  for(uint8_t i=1; i<= s.length(); i++){
+    buffer[i]=(byte)s[i-1];
+  }
+  String p = "";
+  for(uint8_t i=0; i< 16; i++){
+    p += (char)buffer[i];
+  }
+  p.trim();
+  short after = (short)(p.substring(1,5)).toInt();
+Serial.println(s);
+Serial.println(p);
+Serial.println(after);
 }

@@ -38,7 +38,7 @@
                 "/home/vaheed/arduino-1.8.13/hardware/arduino/avr/libraries/SPI/src",
                 "/home/vaheed/arduino-1.8.13/hardware/arduino/avr/libraries/Wire/src",
                 "/home/vaheed/Arduino/libraries/Adafruit_GFX_Library",
-                "/home/vaheed/Arduino/libraries/Adafruit_SSD1306-master",
+                "/home/vaheed/Arduino/libraries/Adafruit_SSD1306",
                 "/home/vaheed/Arduino/libraries/Keypad/src",
                 "/home/vaheed/Arduino/libraries/MFRC522/src",
                 "/home/vaheed/Arduino/libraries/Adafruit_BusIO",

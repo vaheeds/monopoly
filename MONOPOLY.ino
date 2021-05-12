@@ -18,15 +18,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 MFRC522::MIFARE_Key key;
 MFRC522::StatusCode status;
-byte len;
-byte buffer1[18];
 
-
-//byte blockAddr = 4; // uses to store $$$
-//byte buffer[18]; // to store block readed from card
-//byte size = sizeof(buffer);
-//byte dataBlock[3]={};
-
+byte buffer1[18]={0x00};
+byte len = sizeof(buffer1);
 // Keypad
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -49,7 +43,6 @@ byte moneyTemp[4]={0x20,0x20,0x20,0x20};
 void setup() {
     Serial.begin(9600); // Initialize serial communications with the PC
     while (!Serial);    // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)    
-    len = 18;
     initRFID();
     initDisplay();
     welcome();
@@ -204,16 +197,17 @@ void printLCD(String s)
 }
 void setMoneyToCard(short money)
 {
-  s_money = String(money);    
   readCard();
   user = (char)buffer1[0];
-  s_money.getBytes(moneyTemp,4);
-  buffer1[1] = moneyTemp[0];
-  buffer1[2] = moneyTemp[1];
-  buffer1[3] = moneyTemp[2];
-  buffer1[4] = moneyTemp[3];
+  String s = String(money);
+  while(s.length() < 4){
+    s = " " + s;
+  }
+  for(uint8_t i=1; i<= 4; i++){
+    buffer1[i]=(byte)s[i-1];
+  }
   writeCard();
-  placeToScreen(user,s_money);    
+  placeToScreen(user,s);    
   delay(200);
 }
 void addMoneyToCard(short money)
@@ -249,20 +243,20 @@ void setNewPlayers()
     
   if (playerCount == '2') // valid players count
   {  
-    printLCD(" Scan Cards");
+    printLCD("Scan Cards");
     setMoneyToCard(m);
     setMoneyToCard(m);
   }
   else if (playerCount == '3') // valid players count
   {   
-    printLCD(" Scan Cards");
+    printLCD("Scan Cards");
     setMoneyToCard(m);
     setMoneyToCard(m);
     setMoneyToCard(m);
   }
   else if (playerCount == '4') // valid players count
   {   
-    printLCD(" Scan Cards");
+    printLCD("Scan Cards");
     setMoneyToCard(m);
     setMoneyToCard(m);
     setMoneyToCard(m);
@@ -273,6 +267,8 @@ void setNewPlayers()
 }
 short getMoney(short init)
 {  
+  if(init>9999) 
+    return;
   short result = init;
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -285,7 +281,7 @@ short getMoney(short init)
   char tempNumber = myKeypad.waitForKey();
   switch(tempNumber)
   {
-    case '0':
+    case '0':      
       result = (result * 10);
       getMoney(result);
     break;
@@ -378,25 +374,20 @@ void play()
 }
 
 void testIntToCard(short money){
-  byte buffer[16]= {0x4E,0x00,0x00,0x00,
-                  0x00,0x00,0x00,0x00,
-                  0x00,0x00,0x00,0x00,
-                  0x00,0x00,0x00,0x00};
-  Serial.println(money);
-    String s = String(money);
+  String s = String(money);
   while(s.length() < 4){
     s = " " + s;
   }
-  for(uint8_t i=1; i<= s.length(); i++){
-    buffer[i]=(byte)s[i-1];
+  for(uint8_t i=1; i<= 4; i++){
+    buffer1[i]=(byte)s[i-1];
   }
   String p = "";
   for(uint8_t i=0; i< 16; i++){
-    p += (char)buffer[i];
+    p += (char)buffer1[i];
   }
   p.trim();
   short after = (short)(p.substring(1,5)).toInt();
-Serial.println(s);
-Serial.println(p);
-Serial.println(after);
+  Serial.println(s);
+  Serial.println(p);
+  Serial.println(after);
 }

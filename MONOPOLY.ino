@@ -1,3 +1,4 @@
+//#include <EEPROM.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -36,9 +37,21 @@ Keypad myKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
 // Game
 byte playerCount = '0';
-String s_money;
-char user;
-byte moneyTemp[4]={0x20,0x20,0x20,0x20};
+short rMoney = 0;
+short nMoney = 0;
+short sMoney = 0;
+short vMoney = 0;
+short lastMoney = 0;
+const int rAdr = 0;
+const int nAdr = 4;
+const int sAdr = 8;
+const int vAdr = 12;
+const int countAdr = 16;
+char firstUser = '*';
+char secondUser = '*';
+uint8_t scannedCounter = 0;
+bool successRead = false;
+byte readedCard;   // Stores first byte of scanned ID read from RFID Module
 
 void setup() {
     Serial.begin(9600); // Initialize serial communications with the PC
@@ -110,56 +123,29 @@ void welcome()
   display.println(F(" 2 Load"));
   display.display();
  }
+uint8_t getID() {
+  // Getting ready for Reading PICCs
+  if ( ! mfrc522.PICC_IsNewCardPresent()) { //If a new PICC placed to RFID reader continue
+    return 0;
+  }
+  if ( ! mfrc522.PICC_ReadCardSerial()) {   //Since a PICC placed get Serial and continue
+    return 0;
+  }
+  Serial.println(F("Scanned PICC's UID:"));
+  readedCard = mfrc522.uid.uidByte[0];
+  Serial.print(readedCard, HEX);
+  Serial.println("");
+  mfrc522.PICC_HaltA(); // Stop reading
+  return 1;
+}
 void readCard()
 {
-  Serial.println(F("readCard()"));
-  while(1)
-  {  
-    if(!mfrc522.PICC_IsNewCardPresent())
-      continue;
-    if(!mfrc522.PICC_ReadCardSerial())
-      continue;
-    Serial.println(F("**Card Detected:**"));
-
-    status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, USER_BLOCK, &key, &(mfrc522.uid));
-    if (status != MFRC522::STATUS_OK) {
-      Serial.print(F("Authentication failed: "));
-      Serial.println(mfrc522.GetStatusCodeName(status));
-      continue;
-    }
-  
-    status = mfrc522.MIFARE_Read(USER_BLOCK, buffer1, &len);
-    if (status != MFRC522::STATUS_OK) {
-      Serial.print(F("Reading failed: "));
-      Serial.println(mfrc522.GetStatusCodeName(status));
-      continue;
-    }
-    delay(200);  
-    mfrc522.PICC_HaltA();
-    mfrc522.PCD_StopCrypto1();
-    return;
-  } 
-}
-void writeCard() 
-{
-  Serial.println(F("writeCard()"));
-  status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, USER_BLOCK, &key, &(mfrc522.uid));
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("PCD_Authenticate() failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    return;
-  }  
-  // Write block
-  status = mfrc522.MIFARE_Write(USER_BLOCK, buffer1, 16);
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("MIFARE_Write() failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    return;
+  do {
+    successRead = getID();  // sets successRead to 1 when we get read from reader otherwise 0
   }
-  delay(200);
-  mfrc522.PICC_HaltA();
-  mfrc522.PCD_StopCrypto1();
+  while (!successRead);   //the program will not go further while you are not getting a successful read
 }
+
 void newGame()
 {
   Serial.println(F("newGame()"));
@@ -173,10 +159,16 @@ void newGame()
   display.display();
   delay(1500);
   setNewPlayers();
+  display.setCursor(0, 0);
+  display.println(F("           "));
+  display.setCursor(0, 0);
+  display.print(F("Press #"));
+  display.display();
   play();
 }
 void loadGame()
 {
+  vMoney = sMoney = rMoney = nMoney = 0;
   Serial.println(F("loadGame()"));
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -187,6 +179,8 @@ void loadGame()
   display.println(F("  Game"));
   display.display();
   delay(2000);
+  printLCD("...wip...");
+  //play();
 }
 void printLCD(String s)
 {
@@ -195,36 +189,92 @@ void printLCD(String s)
   display.println(s);
   display.display();
 }
-void setMoneyToCard(short money)
+char user()
 {
-  readCard();
-  user = (char)buffer1[0];
-  String s = String(money);
-  while(s.length() < 4){
-    s = " " + s;
-  }
-  for(uint8_t i=1; i<= 4; i++){
-    buffer1[i]=(byte)s[i-1];
-  }
-  writeCard();
-  placeToScreen(user,s);    
-  delay(200);
+  switch(readedCard){
+    case 0x47:
+      return 'B';
+    break;
+    case 0x07:
+      return 'V';
+    break;
+    case 0xA7:
+      return 'N';
+    break;
+    case 0xD7:
+      return 'R';
+    break;
+    case 0xC7:
+      return 'S';
+    break;
+    default:
+      return 'U';
+    break;
+  }  
 }
-void addMoneyToCard(short money)
+void setMoney(short money)
 {
-    
   readCard();
-  user = (char)buffer1[0];
-  //short userMoney = 
-  s_money.getBytes(moneyTemp,4);
-  s_money = String(money);  
-  buffer1[1] = moneyTemp[0];
-  buffer1[2] = moneyTemp[1];
-  buffer1[3] = moneyTemp[2];
-  buffer1[4] = moneyTemp[3];
-  writeCard();
-  placeToScreen(user,s_money);    
-  delay(200);
+  Serial.print(F("Set Money:"));
+  Serial.println(user());
+  switch(user())
+  {
+    case 'N':
+      //EEPROM.put(nAdr, money);
+      nMoney = money;
+      scannedCounter ++;
+    break;
+    case 'R':
+      //EEPROM.put(rAdr, money);
+      rMoney = money;
+      scannedCounter++;
+    break;
+    case 'S':
+      //EEPROM.put(sAdr, money);
+      sMoney = money;
+      scannedCounter++;
+    break;
+    case 'V':
+      //EEPROM.put(vAdr, money);
+      vMoney = money;
+      scannedCounter++;
+    break;
+  }
+  delay(100);
+  refreshScreen();
+}
+void addMoney(char user, short money)
+{
+  Serial.print(F("Add Money:"));
+  Serial.println(user);
+  if(money<0){
+    firstUser = user;
+    secondUser = '*';
+  }
+  if(money>0){
+    secondUser = user;
+  }
+  switch(user)
+  {
+    case 'N':
+      nMoney = nMoney + money;
+      //EEPROM.put(nAdr, nMoney); 
+    break;
+    case 'R':
+      rMoney = rMoney + money;
+      //EEPROM.put(rAdr, rMoney); 
+    break;
+    case 'S':
+      sMoney = sMoney + money;
+      //EEPROM.put(sAdr, sMoney); 
+    break;
+    case 'V':
+      vMoney = vMoney + money;
+      //EEPROM.put(vAdr, vMoney); 
+    break;   
+  }    
+  delay(100);  
+  refreshScreen();
 }
 void setNewPlayers()
 {
@@ -238,32 +288,35 @@ void setNewPlayers()
   display.display();
   short m = 0; // holds init money
   playerCount = myKeypad.waitForKey();
-  Serial.println(playerCount);
+  //EEPROM.put(countAdr, playerCount);
+  Serial.println((char)playerCount);
   m = getMoney(0);    
-    
-  if (playerCount == '2') // valid players count
-  {  
-    printLCD("Scan Cards");
-    setMoneyToCard(m);
-    setMoneyToCard(m);
+  switch(playerCount)
+  {
+    case '2':
+      printLCD("Scan Cards");
+      while(scannedCounter < 2)
+         setMoney(m);
+      delay(1000);
+    break;
+    case '3':
+      printLCD("Scan Cards");
+      while(scannedCounter < 3)
+         setMoney(m);
+      delay(1000);
+    break;
+    case '4':
+      printLCD("Scan Cards");
+      while(scannedCounter < 4)
+         setMoney(m);
+      delay(1000);
+    break;
+    default:
+      printLCD(F("ERROR..."));
+      delay(1000);
+      setNewPlayers(); // in case of invalid input repeat the menu
+    break;
   }
-  else if (playerCount == '3') // valid players count
-  {   
-    printLCD("Scan Cards");
-    setMoneyToCard(m);
-    setMoneyToCard(m);
-    setMoneyToCard(m);
-  }
-  else if (playerCount == '4') // valid players count
-  {   
-    printLCD("Scan Cards");
-    setMoneyToCard(m);
-    setMoneyToCard(m);
-    setMoneyToCard(m);
-    setMoneyToCard(m);
-  }
-  else
-    setNewPlayers(); // in case of invalid input repeat the menu
 }
 short getMoney(short init)
 {  
@@ -336,58 +389,76 @@ short getMoney(short init)
     break;
   }
 }
-void placeToScreen(char user,String s_money)
-{
-  // while(s_money.length() < 4)
-  //   s_money = " " + s_money;
-  switch(user)
-  {
-    case 'V':      
-      display.setCursor(0, 22);
-      display.print(user);
-      display.print(s_money);      
-    break;
-    case 'S':      
-      display.setCursor(68, 22);
-      display.print(user);
-      display.print(s_money);      
-    break;
-    case 'R':      
-      display.setCursor(0, 45);
-      display.print(user);
-      display.print(s_money);      
-    break;
-    case 'N':      
-      display.setCursor(68, 45);
-      display.print(user);
-      display.print(s_money);      
-    break;
-  }
+void refreshScreen()
+{  
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print(firstUser);
+  display.print(F("=>"));
+  display.print(lastMoney);
+  display.print(F("=>"));
+  display.print(secondUser);
+  String s_money;  
+     
+  display.setCursor(0, 22);
+  display.print(F("V"));
+  s_money =  formatMoney(vMoney);
+  display.print(s_money);   
+  
+  display.setCursor(68, 22);
+  display.print(F("S"));
+  s_money =  formatMoney(sMoney);
+  display.print(s_money);   
+ 
+  display.setCursor(0, 45);
+  display.print(F("R"));
+  s_money =  formatMoney(rMoney);
+  display.print(s_money);        
+  
+  display.setCursor(68, 45);
+  display.print(F("N"));
+  s_money = formatMoney(nMoney);
+  display.print(s_money);   
+  
   display.display();
+}
+String formatMoney(short m)
+{
+  String s_money = String(m);
+  while(s_money.length() < 4){
+    s_money = " " + s_money;
+  }
+  return s_money;
 }
 void play()
 {
-  short m = 0;
+  Serial.println(F("wait read card"));
+  readCard();
+  short m = 0;               
   m = getMoney(0);    
-  setMoneyToCard(-1* m);
-  setMoneyToCard(m);
+  lastMoney = m;
+  addMoney(user() , -1* m);
+  printLCD(F("Second      Card..."));
+  readCard();
+  addMoney(user() , m);
+  play();   
 }
-
-void testIntToCard(short money){
-  String s = String(money);
-  while(s.length() < 4){
-    s = " " + s;
-  }
-  for(uint8_t i=1; i<= 4; i++){
-    buffer1[i]=(byte)s[i-1];
-  }
-  String p = "";
-  for(uint8_t i=0; i< 16; i++){
-    p += (char)buffer1[i];
-  }
-  p.trim();
-  short after = (short)(p.substring(1,5)).toInt();
-  Serial.println(s);
-  Serial.println(p);
-  Serial.println(after);
-}
+//
+//void testIntToCard(short money){
+//  String s = String(money);
+//  while(s.length() < 4){
+//    s = " " + s;
+//  }
+//  for(uint8_t i=1; i<= 4; i++){
+//    buffer1[i]=(byte)s[i-1];
+//  }
+//  String p = "";
+//  for(uint8_t i=0; i< 16; i++){
+//    p += (char)buffer1[i];
+//  }
+//  p.trim();
+//  short after = (short)(p.substring(1,5)).toInt();
+//  Serial.println(s);
+//  Serial.println(p);
+//  Serial.println(after);
+//}

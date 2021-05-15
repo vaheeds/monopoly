@@ -1,11 +1,11 @@
 //#include <EEPROM.h>
-//#include <SPI.h>
+#include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Keypad.h>
 #include <MFRC522.h>
-#include <string.h>
+//#include <string.h>
 #define RST_PIN         9    
 #define SS_PIN          10    
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -54,7 +54,8 @@ char secondUser = '*';
 //uint8_t scannedCounter = 0;
 bool successRead = false;
 byte readedCard;   // Stores first byte of scanned ID read from RFID Module
-
+String str;
+short m;
 void setup() {
     Serial.begin(9600); // Initialize serial communications with the PC
     while (!Serial);    // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)    
@@ -88,7 +89,7 @@ void setNewPlayers()
   display.println(F("     3   "));
   display.println(F("       4 "));
   display.display();
-  short m = 0; // holds init money
+  m = 0; // holds init money
   playerCount = myKeypad.waitForKey();
   //EEPROM.put(countAdr, playerCount);
   Serial.print(F("Player Count: "));
@@ -188,8 +189,7 @@ void setMoney(short money)
 void play()
 {
   Serial.println(F("Play: wait to read card..."));
-  readCard();
-  short m = 0;               
+  readCard();                 
   m = getMoney(0);    
   lastMoney = m;
   addMoney(user() , -1* m);
@@ -209,35 +209,36 @@ void refreshScreen()
   display.print(lastMoney);
   display.print(F("=>"));
   display.print(secondUser);
-  String s_money;  
      
   display.setCursor(0, 22);
   display.print(F("V"));
-  s_money =  formatMoney(vMoney);
-  display.print(s_money);   
+  str =  formatMoney(vMoney);
+  display.print(str);   
   
   display.setCursor(68, 22);
   display.print(F("S"));
-  s_money =  formatMoney(sMoney);
-  display.print(s_money);   
+  str =  formatMoney(sMoney);
+  display.print(str);   
  
   display.setCursor(0, 45);
-
   display.print(F("R"));
+  str =  formatMoney(rMoney);
+  display.print(str);
   
+  display.setCursor(68, 45);
   display.print(F("N"));
-  s_money = formatMoney(nMoney);
-  display.print(s_money);   
+  str = formatMoney(nMoney);
+  display.print(str);   
   
   display.display();
 }
 void initDisplay()
 {  
-  Serial.println("initDisplay()");
+  Serial.println(F("initDisplay()"));
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
   {
-    Serial.println("SSD1306 allocation failed");
+    Serial.println(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
   }
   display.display();
@@ -258,25 +259,25 @@ void initRFID()
 }
 void welcome()
 {
-  Serial.println("welcome()");
+  Serial.println(F("welcome()"));
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
   display.setCursor(19, 10);
-  display.print("MONOPOLY");
+  display.print(F("MONOPOLY"));
   display.setCursor(10, 35);
-  display.print("by Vaheed");
+  display.print(F("by Vaheed"));
   display.display();
   delay(4000);
   display.clearDisplay();
   display.setCursor(0, 0);
   display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
   display.setCursor(20, 16);
-  display.print(" 1 New");
+  display.print(F(" 1 New"));
   display.setCursor(16, 38);
-  display.println(" 2 Load");
+  display.println(F(" 2 Load"));
   display.display();
  }
 uint8_t getID() {
@@ -303,14 +304,14 @@ void readCard()
 }
 void newGame()
 {
-  Serial.println("newGame()");
+  Serial.println(F("newGame()"));
   display.clearDisplay();
   display.setCursor(0, 0);
   display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
   display.setCursor(20, 16);
-  display.print("  New");
+  display.print(F("  New"));
   display.setCursor(16, 38);
-  display.println("  Game");
+  display.println(F("  Game"));
   display.display();
   delay(1500);
   setNewPlayers();
@@ -323,9 +324,9 @@ void loadGame()
   display.setCursor(0, 0);
   display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
   display.setCursor(20, 16);
-  display.print("  Load");
+  display.print(F("  Load"));
   display.setCursor(16, 38);
-  display.println("  Game");
+  display.println(F("  Game"));
   display.display();
   delay(2000);
   printLCD(F("...wip..."));
@@ -389,9 +390,9 @@ short getMoney(short init)
   short result = init;
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println(" Enter $$$");
+  display.println(F(" Enter $$$"));
   display.println();
-  display.print("  ");
+  display.print(F("  "));
   display.print(result);
   Serial.println(result);
   display.display();

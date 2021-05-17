@@ -54,8 +54,8 @@ char secondUser = '*';
 //uint8_t scannedCounter = 0;
 bool successRead = false;
 byte readedCard;   // Stores first byte of scanned ID read from RFID Module
-String str;
-const char *cstr;
+char *str;
+//const char *cstr;
 uint8_t i = 0;
 short m;
 void setup() {
@@ -81,29 +81,44 @@ void loop()
     }    
   }
 }
-
-// void StrToCstr(String s)
-// {   
-//   for (i=0; i < s.length(); i++)
-//   {
-//     cstr[i] = s[i];
-//   }
-//   cstr[i]='\0';
-// }
-void setNewPlayers()
+void welcome()
 {
-  //Serial.println(F("setNewPlayers()"));
+//  Serial.println("welcome()");
+//  display.clearDisplay();
+//  display.setTextSize(2);
+//  display.setTextColor(SSD1306_WHITE);
+//  display.setCursor(0, 0);
+//  display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
+//  display.setCursor(19, 10);
+//  display.print("MONOPOLY");
+//  display.setCursor(10, 35);
+//  display.print("by Vaheed");
+//  display.display();
+//  delay(4000);
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println(F(" Players ?"));
-  display.println(F("   2     "));
-  display.println(F("     3   "));
-  display.println(F("       4 "));
+  display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
+  display.setCursor(20, 16);
+  display.print(" 1 New");
+  display.setCursor(16, 38);
+  display.println(" 2 Load");
+  display.display();
+ }
+
+void setNewPlayers()
+{
+  //Serial.println("setNewPlayers()"));
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(" Players ?");
+  display.println("   2     ");
+  display.println("     3   ");
+  display.println("       4 ");
   display.display();
   m = 0; // holds init money
   playerCount = myKeypad.waitForKey();
   //EEPROM.put(countAdr, playerCount);
-  //Serial.print(F("Player Count: "));
+  //Serial.print("Player Count: "));
   //Serial.println((char)playerCount);
   switch(playerCount)
   {
@@ -123,7 +138,7 @@ void setNewPlayers()
          setMoney(m);
     break;
     default:
-      printLCD(F("ERROR..."));
+      printLCD("ERROR...");
       delay(1000);
       setNewPlayers(); // in case of invalid input repeat the menu
     break;
@@ -131,9 +146,9 @@ void setNewPlayers()
 }
 void addMoney(char user, short money)
 {
-  //Serial.print(F("Add Money:"));
+  //Serial.print("Add Money:"));
   //Serial.print(user);
-  //Serial.print(F(" = "));
+  //Serial.print(" = "));
   //Serial.println(money);
   if(money<0){
     firstUser = user;
@@ -164,12 +179,12 @@ void addMoney(char user, short money)
 }
 void setMoney(short money)
 {
-  printLCD(F("Set Money  Scan Card")); 
+  printLCD("Set Money  Scan Card"); 
   delay(10);
   readCard();
-  //Serial.print(F("Set Money: "));
+  //Serial.print("Set Money: "));
   //Serial.print(user());
-  //Serial.print(F(" = "));
+  //Serial.print(" = "));
   //Serial.println(money);
   switch(user())
   {
@@ -199,12 +214,12 @@ void setMoney(short money)
 }
 void play()
 {
-  //Serial.println(F("Play: wait to read card..."));
+  //Serial.println("Play: wait to read card..."));
   readCard();                 
   m = getMoney(0);    
   lastMoney = m;
   addMoney(user() , -1* m);
-  printLCD(F("Scan        Second     Card..."));
+  printLCD("Scan        Second     Card...");
   readCard();
   addMoney(user() , m);
   refreshScreen();
@@ -212,32 +227,32 @@ void play()
 }
 void refreshScreen()
 {  
-  //Serial.println(F("Refresh Screen..."));
+  //Serial.println("Refresh Screen..."));
   display.clearDisplay();
   display.setCursor(0, 0);
   display.print(firstUser);
-  display.print(F("=>"));
+  display.print("=>");
   display.print(lastMoney);
-  display.print(F("=>"));
+  display.print("=>");
   display.print(secondUser);
      
   display.setCursor(0, 22);
-  display.print(F("V"));
+  display.print("V");
   formatMoney(vMoney);
   //display.print(cstr);   
   
   display.setCursor(68, 22);
-  display.print(F("S"));
+  display.print("S");
   formatMoney(sMoney);
   //display.print(cstr);   
  
   display.setCursor(0, 45);
-  display.print(F("R"));
+  display.print("R");
   formatMoney(rMoney);
   //display.print(cstr);
   
   display.setCursor(68, 45);
-  display.print(F("N"));
+  display.print("N");
   formatMoney(nMoney);
   //display.print(cstr);   
   
@@ -245,11 +260,11 @@ void refreshScreen()
 }
 void initDisplay()
 {  
-  //Serial.println(F("initDisplay()"));
+  //Serial.println("initDisplay()"));
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
   {
-    //Serial.println(F("SSD1306 allocation failed"));
+    //Serial.println("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
   }
   display.display();
@@ -262,35 +277,13 @@ void initDisplay()
 }
 void initRFID()
 {
-  //Serial.println(F("initRFID()"));
+  //Serial.println("initRFID()"));
   SPI.begin();        // Init SPI bus
   mfrc522.PCD_Init(); // Init MFRC522 card
   // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
   //for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
 }
-void welcome()
-{
-  //Serial.println(F("welcome()"));
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
-  display.setCursor(19, 10);
-  display.print(F("MONOPOLY"));
-  display.setCursor(10, 35);
-  display.print(F("by Vaheed"));
-  display.display();
-  delay(4000);
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
-  display.setCursor(20, 16);
-  display.print(F(" 1 New"));
-  display.setCursor(16, 38);
-  display.println(F(" 2 Load"));
-  display.display();
- }
+
 uint8_t getID() {
   // Getting ready for Reading PICCs
   if ( ! mfrc522.PICC_IsNewCardPresent()) { //If a new PICC placed to RFID reader continue
@@ -299,10 +292,10 @@ uint8_t getID() {
   if ( ! mfrc522.PICC_ReadCardSerial()) {   //Since a PICC placed get //Serial and continue
     return 0;
   }
-  //Serial.print(F("Scanned PICC's UID: "));
+  //Serial.print("Scanned PICC's UID: "));
   readedCard = mfrc522.uid.uidByte[0];
   //Serial.print(readedCard, HEX);
-  //Serial.println(F(""));
+  //Serial.println(""));
   mfrc522.PICC_HaltA(); // Stop reading
   return 1;
 }
@@ -315,14 +308,14 @@ void readCard()
 }
 void newGame()
 {
-  //Serial.println(F("newGame()"));
+  //Serial.println("newGame()"));
   display.clearDisplay();
   display.setCursor(0, 0);
   display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
   display.setCursor(20, 16);
-  display.print(F("  New"));
+  display.print("  New");
   display.setCursor(16, 38);
-  display.println(F("  Game"));
+  display.println("  Game");
   display.display();
   delay(1500);
   setNewPlayers();
@@ -330,26 +323,38 @@ void newGame()
 }
 void loadGame()
 { 
-  //Serial.println(F("loadGame()"));
+  //Serial.println("loadGame()"));
   display.clearDisplay();
   display.setCursor(0, 0);
   display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
   display.setCursor(20, 16);
-  display.print(F("  Load"));
+  display.print("  Load");
   display.setCursor(16, 38);
-  display.println(F("  Game"));
+  display.println("  Game");
   display.display();
   delay(2000);
-  printLCD(F("...wip..."));
+  printLCD("...wip...");
   //play();
 }
 
-void printLCD(String s)
+//void printLCD(String s)
+//{
+//  //Serial.println(s);
+//  display.clearDisplay();
+//  display.setCursor(0, 0);
+//  display.println(s);
+//  display.display();
+//}
+void printLCD(char *s)
 {
   //Serial.println(s);
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println(s);
+  i = 0;
+  while(s[i] != '\0'){
+    display.write(s[i]);
+    i++;
+  }  
   display.display();
 }
 char user()
@@ -408,9 +413,9 @@ short getMoney(short init)
   short result = init;
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println(F(" Enter $$$"));
+  display.println(" Enter $$$");
   display.println();
-  display.print(F("  "));
+  display.print("  ");
   display.print(result);
   //Serial.println(result);
   display.display();

@@ -1,4 +1,4 @@
-//#include <EEPROM.h>
+#include <EEPROM.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -74,28 +74,23 @@ void loop()
 }
 void welcome()
 {
-//  Serial.println("welcome()");
-//  display.clearDisplay();
-//  display.setTextSize(2);
-//  display.setTextColor(SSD1306_WHITE);
-//  display.setCursor(0, 0);
-//  display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
-//  display.setCursor(19, 10);
-//  display.print("MONOPOLY");
-//  display.setCursor(10, 35);
-//  display.print("by Vaheed");
-//  display.display();
-//  delay(4000);
+  //Serial.println(F("welcome()"));
+  display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
+  display.setCursor(19, 10);
+  display.print(F("MONOPOLY"));
+  display.setCursor(10, 35);
+  display.print(F("by Vaheed"));
+  display.display();
+  delay(3000);
   display.clearDisplay();
   display.setCursor(0, 0);
   display.drawRoundRect(0, 0, 128, 64,16, SSD1306_WHITE);
   display.setCursor(20, 16);
-  display.print(" 1 New");
+  display.print(F(" 1 New"));
   display.setCursor(16, 38);
-  display.println(" 2 Load");
+  display.println(F(" 2 Load"));
   display.display();
  }
-
 void setNewPlayers()
 {
   //Serial.println("setNewPlayers()"));

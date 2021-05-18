@@ -320,7 +320,6 @@ void loadGame()
   printLCD("...wip...");
   //play();
 }
-
 void printLCD(char *s)
 {
   //Serial.println(s);
@@ -366,7 +365,6 @@ uint8_t filledUsersCount()
   }
   return temp;
 }
-
 void formatMoney(short m)
 {
   s_money[0] = '\0';

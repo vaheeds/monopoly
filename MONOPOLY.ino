@@ -21,8 +21,6 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 MFRC522::MIFARE_Key key;
 MFRC522::StatusCode status;
 
-//byte buffer1[18]={0x00};
-//byte len = sizeof(buffer1);
 // Keypad
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -44,25 +42,18 @@ short sMoney = 0;
 short vMoney = 0;
 short lastMoney = 0;
 bool setUsers[4] = {false, false, false, false};
-//const int rAdr = 0;
-//const int nAdr = 4;
-//const int sAdr = 8;
-//const int vAdr = 12;
-//const int countAdr = 16;
 char firstUser = '*';
 char secondUser = '*';
-//uint8_t scannedCounter = 0;
 bool successRead = false;
 byte readedCard;   // Stores first byte of scanned ID read from RFID Module
 char *str;
-//const char *cstr;
 uint8_t i = 0;
 short m;
+char s_money[5];
 void setup() {
     Serial.begin(9600); // Initialize //Serial communications with the PC
     while (!Serial);    // Do nothing if no //Serial port is opened (added for Arduinos based on ATMEGA32U4)    
-    initRFID();
-    initDisplay();
+    initHardWare();
     welcome();
 }
 void loop() 
@@ -230,37 +221,39 @@ void refreshScreen()
   //Serial.println("Refresh Screen..."));
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.print(firstUser);
-  display.print("=>");
-  display.print(lastMoney);
-  display.print("=>");
-  display.print(secondUser);
+  display.write(firstUser);
+  display.print(F("=>"));
+  formatMoney(lastMoney);
+  display.print(F("=>"));
+  display.write(secondUser);
      
   display.setCursor(0, 22);
-  display.print("V");
+  display.write('V');
   formatMoney(vMoney);
   //display.print(cstr);   
   
   display.setCursor(68, 22);
-  display.print("S");
+  display.write('S');
   formatMoney(sMoney);
   //display.print(cstr);   
  
   display.setCursor(0, 45);
-  display.print("R");
+  display.write('R');
   formatMoney(rMoney);
   //display.print(cstr);
   
   display.setCursor(68, 45);
-  display.print("N");
+  display.write('N');
   formatMoney(nMoney);
   //display.print(cstr);   
   
   display.display();
 }
-void initDisplay()
+void initHardWare()
 {  
-  //Serial.println("initDisplay()"));
+  SPI.begin();        // Init SPI bus
+  mfrc522.PCD_Init(); // Init MFRC522 card
+  //Serial.println("init()"));
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
   {
@@ -275,15 +268,6 @@ void initDisplay()
   display.display();
   display.setCursor(0,0);   
 }
-void initRFID()
-{
-  //Serial.println("initRFID()"));
-  SPI.begin();        // Init SPI bus
-  mfrc522.PCD_Init(); // Init MFRC522 card
-  // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
-  //for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
-}
-
 uint8_t getID() {
   // Getting ready for Reading PICCs
   if ( ! mfrc522.PICC_IsNewCardPresent()) { //If a new PICC placed to RFID reader continue
@@ -337,14 +321,6 @@ void loadGame()
   //play();
 }
 
-//void printLCD(String s)
-//{
-//  //Serial.println(s);
-//  display.clearDisplay();
-//  display.setCursor(0, 0);
-//  display.println(s);
-//  display.display();
-//}
 void printLCD(char *s)
 {
   //Serial.println(s);
@@ -393,30 +369,23 @@ uint8_t filledUsersCount()
 
 void formatMoney(short m)
 {
-  char s_money[]="    ";
+  s_money[0] = '\0';
   itoa(m,s_money,10);
-  display.write(s_money[0]);
-  display.write(s_money[1]);
-  display.write(s_money[2]);
-  display.write(s_money[3]);
-  // while(s_money.length() < 4){
-  //   s_money = " " + s_money;
-  // }
-  // &s_money[4] = '\0';
-  // Serial.println(s_money);
-  // return s_money;
+  i = 0;
+  while(s_money[i] != '\0'){
+    display.write(s_money[i]);
+    i++;
+  }  
 }
 short getMoney(short init)
 {  
   if(init>9999) 
-    return;
+    return 0;
   short result = init;
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println(" Enter $$$");
-  display.println();
-  display.print("  ");
-  display.print(result);
+  printLCD(" Enter $$$              ");
+  formatMoney(result);
   //Serial.println(result);
   display.display();
   char tempNumber = myKeypad.waitForKey();

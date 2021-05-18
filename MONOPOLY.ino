@@ -111,17 +111,17 @@ void setNewPlayers()
     case '2':
       m = getMoney(0);  
       while(filledUsersCount() < 2)
-         setMoney(m);
+         setInitMoney(m);
     break;
     case '3':
       m = getMoney(0); 
       while(filledUsersCount() < 3)
-         setMoney(m);
+         setInitMoney(m);
     break;
     case '4':
       m = getMoney(0); 
       while(filledUsersCount() < 4)
-         setMoney(m);
+         setInitMoney(m);
     break;
     default:
       printLCD("ERROR...");
@@ -147,23 +147,23 @@ void addMoney(char user, short money)
   {
     case 'N':
       nMoney = nMoney + money;
-      //EEPROM.put(nAdr, nMoney); 
+      saveNaveed();
     break;
     case 'R':
       rMoney = rMoney + money;
-      //EEPROM.put(rAdr, rMoney); 
+      saveRoya();
     break;
     case 'S':
       sMoney = sMoney + money;
-      //EEPROM.put(sAdr, sMoney); 
+      saveSadaf();
     break;
     case 'V':
       vMoney = vMoney + money;
-      //EEPROM.put(vAdr, vMoney); 
+      saveVaheed();
     break;   
   }
 }
-void setMoney(short money)
+void setInitMoney(short money)
 {
   printLCD("Set Money  Scan Card"); 
   delay(10);
@@ -175,23 +175,23 @@ void setMoney(short money)
   switch(user())
   {
     case 'N':
-      //EEPROM.put(nAdr, money);
       nMoney = money;
+      saveNaveed();
       setUsers[0]= true;
     break;
     case 'R':
-      //EEPROM.put(rAdr, money);
       rMoney = money;
+      saveRoya();
       setUsers[1]= true;
     break;
     case 'S':
-      //EEPROM.put(sAdr, money);
       sMoney = money;
+      saveSadaf();
       setUsers[2]= true;
     break;
     case 'V':
-      //EEPROM.put(vAdr, money);
       vMoney = money;
+      saveVaheed();
       setUsers[3]= true;
     break;
   }
@@ -208,6 +208,7 @@ void play()
   printLCD("Scan        Second     Card...");
   readCard();
   addMoney(user() , m);
+  saveLastTransaction();
   refreshScreen();
   play();   
 }
@@ -218,28 +219,28 @@ void refreshScreen()
   display.setCursor(0, 0);
   display.write(firstUser);
   display.print(F("=>"));
-  formatMoney(lastMoney);
+  printMoney(lastMoney);
   display.print(F("=>"));
   display.write(secondUser);
      
   display.setCursor(0, 22);
   display.write('V');
-  formatMoney(vMoney);
+  printMoney(vMoney);
   //display.print(cstr);   
   
   display.setCursor(68, 22);
   display.write('S');
-  formatMoney(sMoney);
+  printMoney(sMoney);
   //display.print(cstr);   
  
   display.setCursor(0, 45);
   display.write('R');
-  formatMoney(rMoney);
+  printMoney(rMoney);
   //display.print(cstr);
   
   display.setCursor(68, 45);
   display.write('N');
-  formatMoney(nMoney);
+  printMoney(nMoney);
   //display.print(cstr);   
   
   display.display();
@@ -311,9 +312,49 @@ void loadGame()
   display.setCursor(16, 38);
   display.println("  Game");
   display.display();
-  delay(2000);
-  printLCD("...wip...");
-  //play();
+  delay(1500);
+  loadPlayers();
+  play();
+}
+void saveVaheed()
+{
+  EEPROM.put(0, vMoney);
+}
+void saveSadaf()
+{
+  EEPROM.put(2, sMoney);
+}
+void saveRoya()
+{
+  EEPROM.put(4, rMoney);
+}
+void saveNaveed()
+{
+  EEPROM.put(6, nMoney);
+}
+void saveLastTransaction()
+{
+  EEPROM.put(8, lastMoney);
+  EEPROM.put(10, firstUser);
+  EEPROM.put(11, secondUser);
+}
+void loadPlayers()
+{
+  vMoney = EEPROM.read(0);
+  Serial.println(vMoney);
+  sMoney = EEPROM.read(2);
+  Serial.println(sMoney);
+  rMoney = EEPROM.read(4);
+  Serial.println(rMoney);
+  nMoney = EEPROM.read(6);
+  Serial.println(nMoney);
+  lastMoney = EEPROM.read(8);
+  Serial.println(lastMoney);
+  firstUser = EEPROM.read(10);
+  Serial.println(firstUser);
+  secondUser = EEPROM.read(11);
+  Serial.println(secondUser);
+  refreshScreen();
 }
 void printLCD(char *s)
 {
@@ -360,7 +401,7 @@ uint8_t filledUsersCount()
   }
   return temp;
 }
-void formatMoney(short m)
+void printMoney(short m)
 {
   s_money[0] = '\0';
   itoa(m,s_money,10);
@@ -378,7 +419,7 @@ short getMoney(short init)
   display.clearDisplay();
   display.setCursor(0, 0);
   printLCD(" Enter $$$              ");
-  formatMoney(result);
+  printMoney(result);
   //Serial.println(result);
   display.display();
   char tempNumber = myKeypad.waitForKey();

@@ -53,6 +53,7 @@ char s_money[5];
 void setup() {
     Serial.begin(9600); // Initialize //Serial communications with the PC
     while (!Serial);    // Do nothing if no //Serial port is opened (added for Arduinos based on ATMEGA32U4)    
+    pinMode(A0,OUTPUT);
     initHardWare();
     welcome();
 }
@@ -130,6 +131,22 @@ void setNewPlayers()
     break;
   }
 }
+void beepUp()
+{
+  tone(A2, 800);
+  delay(100);
+  tone(A2, 1000);
+  delay(100);
+  noTone(A2);
+}
+void beepDown()
+{
+  tone(A2, 600);
+  delay(100);
+  tone(A2, 800);
+  delay(100);
+  noTone(A2);
+}
 void addMoney(char user, short money)
 {
   //Serial.print("Add Money:"));
@@ -168,6 +185,7 @@ void setInitMoney(short money)
   printLCD("Set Money  Scan Card"); 
   delay(10);
   readCard();
+  beepDown();
   //Serial.print("Set Money: "));
   //Serial.print(user());
   //Serial.print(" = "));
@@ -201,12 +219,16 @@ void setInitMoney(short money)
 void play()
 {
   //Serial.println("Play: wait to read card..."));
-  readCard();                 
+  readCard();
+  beepUp();
+  digitalWrite(A0,HIGH);
   m = getMoney(0);    
   lastMoney = m;
   addMoney(user() , -1* m);
   printLCD("Scan        Second     Card...");
   readCard();
+  beepDown();
+  digitalWrite(A0,LOW);
   addMoney(user() , m);
   saveLastTransaction();
   refreshScreen();
@@ -326,7 +348,7 @@ void saveSadaf()
 }
 void saveRoya()
 {
-  EEPROM.put(4, rMoney);
+  EEPROM.put(4, rMoney);  
 }
 void saveNaveed()
 {
@@ -340,20 +362,20 @@ void saveLastTransaction()
 }
 void loadPlayers()
 {
-  vMoney = EEPROM.read(0);
-  Serial.println(vMoney);
-  sMoney = EEPROM.read(2);
-  Serial.println(sMoney);
-  rMoney = EEPROM.read(4);
-  Serial.println(rMoney);
-  nMoney = EEPROM.read(6);
-  Serial.println(nMoney);
-  lastMoney = EEPROM.read(8);
-  Serial.println(lastMoney);
+  EEPROM.get(0,vMoney);
+  //Serial.println(vMoney);
+  EEPROM.get(2,sMoney);
+  //Serial.println(sMoney);
+  EEPROM.get(4,rMoney);
+  //Serial.println(rMoney);
+  EEPROM.get(6,nMoney);
+  //Serial.println(nMoney);
+  EEPROM.get(8,lastMoney);
+  //Serial.println(lastMoney);
   firstUser = EEPROM.read(10);
-  Serial.println(firstUser);
+  //Serial.println(firstUser);
   secondUser = EEPROM.read(11);
-  Serial.println(secondUser);
+  //Serial.println(secondUser);
   refreshScreen();
 }
 void printLCD(char *s)

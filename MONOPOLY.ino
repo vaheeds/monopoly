@@ -5,7 +5,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Keypad.h>
 #include <MFRC522.h>
-#include <string.h>
+//#include <string.h>
 #define RST_PIN         9    
 #define SS_PIN          10    
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -50,6 +50,8 @@ char *str;
 uint8_t i = 0;
 short m;
 char s_money[5];
+char tempNumber = '0';
+short result = 0;
 void setup() {
     Serial.begin(9600); // Initialize //Serial communications with the PC
     while (!Serial);    // Do nothing if no //Serial port is opened (added for Arduinos based on ATMEGA32U4)    
@@ -130,6 +132,12 @@ void setNewPlayers()
       setNewPlayers(); // in case of invalid input repeat the menu
     break;
   }
+}
+void flashLed()
+{
+  digitalWrite(A0,HIGH);
+  delay(50);
+  digitalWrite(A0,LOW);
 }
 void beepUp()
 {
@@ -221,11 +229,13 @@ void play()
   //Serial.println("Play: wait to read card..."));
   readCard();
   beepUp();
-  digitalWrite(A0,HIGH);
   m = getMoney(0);    
   lastMoney = m;
   addMoney(user() , -1* m);
-  printLCD("Scan        Second     Card...");
+  printLCD("Scan Card             +");
+  printMoney(m);
+  display.display();
+  digitalWrite(A0,HIGH);
   readCard();
   beepDown();
   digitalWrite(A0,LOW);
@@ -434,17 +444,16 @@ void printMoney(short m)
   }  
 }
 short getMoney(short init)
-{  
-  if(init>9999) 
-    return 0;
-  short result = init;
+{   
+  result = init > 9999 || init < 0 ? 0 : init;
   display.clearDisplay();
   display.setCursor(0, 0);
   printLCD(" Enter $$$              ");
   printMoney(result);
   //Serial.println(result);
   display.display();
-  char tempNumber = myKeypad.waitForKey();
+  tempNumber = myKeypad.waitForKey();
+  flashLed();
   switch(tempNumber)
   {
     case '0':      
@@ -492,12 +501,6 @@ short getMoney(short init)
        getMoney(result);
     break;
     case '#':
-      if(result > 9999)
-      {
-        result = 0;
-        getMoney(result);
-      }
-      else
         return result;
     break;
   }
